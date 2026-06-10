@@ -1,13 +1,3 @@
-# Dependencies
 node_modules/
-# Build output
-dist/
-# Vite cache
-.vite/
-# Environment files
 .env
 .env.*
-# Misc
-npm-debug.log
-yarn-debug.log
-yarn-error.log
