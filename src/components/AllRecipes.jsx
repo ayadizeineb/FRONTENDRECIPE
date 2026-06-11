@@ -25,7 +25,7 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
         const urlObj = new URL(basePath, apiBase);
 
         const params = new URLSearchParams({
-          page: page.toString(),
+          skip: ((page - 1) * limit).toString(),
           limit: limit.toString(),
           ...(startsWith && { startsWith }),
           ...(searchTerm && { search: searchTerm }),
