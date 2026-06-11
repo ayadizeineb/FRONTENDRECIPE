@@ -21,7 +21,7 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
     const fetchRecipes = async () => {
       try {
         const basePath = userOnly ? '/api/recipes/my-recipes' : '/api/recipes';
-        const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+        const apiBase = import.meta.env.VITE_API_URL || 'https://backendrecipe-1.onrender.com';
         const urlObj = new URL(basePath, apiBase);
 
         const params = new URLSearchParams({
