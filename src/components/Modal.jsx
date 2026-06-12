@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import "./Modal.css";
 
 function Modal({ isOpen, onClose, onLoginSuccess, children }) {
@@ -32,21 +33,13 @@ function Modal({ isOpen, onClose, onLoginSuccess, children }) {
 
     console.log(isRegister ? "Registering" : "Logging in", payload);
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || (isRegister ? "Registration failed" : "Login failed"));
-      }
-      const data = await res.json();
+      const res = await axios.post(url, payload);
+      const data = res.data;
       console.log(isRegister ? "Registration success" : "Login success", data);
       if (onLoginSuccess) onLoginSuccess(data.token);
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert(err.response?.data?.message || err.message || (isRegister ? "Registration failed" : "Login failed"));
       return;
     }
     onClose();

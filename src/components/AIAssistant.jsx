@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import "./AIAssistant.css";
 
 function AIAssistant({ recipeId }) {
@@ -22,20 +23,13 @@ function AIAssistant({ recipeId }) {
     setLoading(true);
     setAnswer("");
     try {
-      const res = await fetch(`/api/ai/assist`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-        body: JSON.stringify({ recipeId, prompt: activePrompt }),
-      });
-      if (!res.ok) throw new Error("Server error");
-      const data = await res.json();
-      setAnswer(data.answer || (data.success ? data.answer : "No response from AI"));
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(`/api/ai/assist`, { recipeId, prompt: activePrompt }, { headers });
+      setAnswer(res.data.answer || (res.data.success ? res.data.answer : "No response from AI"));
     } catch (err) {
       console.error(err);
-      setAnswer("Error: " + err.message);
+      setAnswer("Error: " + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }

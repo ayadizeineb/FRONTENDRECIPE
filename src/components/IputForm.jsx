@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./IputForm.css";
 
 const PREDEFINED_TAGS = [
@@ -10,7 +11,6 @@ const CATEGORY_OPTIONS = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "O
 
 function IputForm({ onAdd, initialValues = {} }) {
     const isEdit = Boolean(initialValues._id);
-    const API_BASE = "";
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -75,7 +75,7 @@ function IputForm({ onAdd, initialValues = {} }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem("token");
-        const headers = { Authorization: "Bearer " + token };
+        const headers = token ? { Authorization: "Bearer " + token } : {};
 
         const parsedIngredients = ingredients.map(i => i.trim()).filter(Boolean);
         const parsedInstructions = instructions.map(i => i.trim()).filter(Boolean);
@@ -93,16 +93,14 @@ function IputForm({ onAdd, initialValues = {} }) {
             if (totalPrepMinutes) formData.append("prepTimeMinutes", totalPrepMinutes);
 
             const endpoint = isEdit
-                ? `${API_BASE}/api/recipes/${initialValues._id}`
-                : `${API_BASE}/api/recipes`;
+                ? `/api/recipes/${initialValues._id}`
+                : `/api/recipes`;
 
-            const res = await fetch(endpoint, {
-                method: isEdit ? "PUT" : "POST",
-                headers,
-                body: formData,
-            });
-            if (!res.ok) throw new Error("Failed to save recipe fields");
-            const savedRecipe = await res.json();
+            const res = isEdit 
+                ? await axios.put(endpoint, formData, { headers })
+                : await axios.post(endpoint, formData, { headers });
+
+            const savedRecipe = res.data;
             const recipeId = savedRecipe._id;
 
             // STEP 2: handle image separately
@@ -110,21 +108,11 @@ function IputForm({ onAdd, initialValues = {} }) {
                 // New image chosen → PUT /:id/image
                 const imgForm = new FormData();
                 imgForm.append("image", imageFile);
-                const imgRes = await fetch(`${API_BASE}/api/recipes/${recipeId}/image`, {
-                    method: "PUT",
-                    headers,
-                    body: imgForm,
-                });
-                if (!imgRes.ok) throw new Error("Failed to upload image");
+                await axios.put(`/api/recipes/${recipeId}/image`, imgForm, { headers });
             } else if (isEdit && removeImage) {
                 // User deleted image → DELETE /:id/image
-                const delRes = await fetch(`${API_BASE}/api/recipes/${recipeId}/image`, {
-                    method: "DELETE",
-                    headers,
-                });
-                if (!delRes.ok) throw new Error("Failed to remove image");
+                await axios.delete(`/api/recipes/${recipeId}/image`, { headers });
             }
-            // else: no image change → nothing to do
 
             if (onAdd) onAdd(savedRecipe);
 
@@ -139,7 +127,7 @@ function IputForm({ onAdd, initialValues = {} }) {
 
         } catch (err) {
             console.error(err);
-            alert(err.message || "Failed to save recipe.");
+            alert(err.response?.data?.message || err.message || "Failed to save recipe.");
         }
     };
 

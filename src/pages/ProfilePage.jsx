@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import './ProfilePage.css';
 
 function ProfilePage() {
@@ -10,14 +11,11 @@ function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/auth/profile', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) throw new Error('Failed to load profile');
-        const data = await res.json();
-        setProfile(data);
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get('/api/auth/profile', { headers });
+        setProfile(res.data);
       } catch (err) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
       }

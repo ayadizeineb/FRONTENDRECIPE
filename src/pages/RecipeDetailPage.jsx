@@ -49,14 +49,12 @@ const RecipeDetailPage = () => {
     if (!window.confirm('Delete this recipe?')) return;
     try {
       const token = localStorage.getItem('token');
-      await fetch(`/api/recipes/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`/api/recipes/${id}`, { headers });
       navigate('/myRecipes');
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('Failed to delete recipe');
+      alert(err.response?.data?.message || 'Failed to delete recipe');
     }
   };
 
