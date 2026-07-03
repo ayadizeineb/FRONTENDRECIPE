@@ -5,6 +5,7 @@ import './RecipeDetailPage.css';
 import Rating from '../components/Rating';
 import Comments from '../components/Comments';
 import AIAssistant from '../components/AIAssistant';
+import LikedBy from '../components/LikedBy';
 
 const RecipeDetailPage = () => {
   const { id } = useParams();
@@ -12,6 +13,8 @@ const RecipeDetailPage = () => {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const loggedInUserId = (() => {
     const token = localStorage.getItem('token');
     if (!token) return null;
@@ -31,6 +34,7 @@ const RecipeDetailPage = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await axios.get(`/api/recipes/${id}`, { headers });
         setRecipe(res.data);
+        setLikesCount(res.data.likes || 0);
         setLoading(false);
       } catch (err) {
         console.error('Failed to load recipe:', err);
@@ -40,6 +44,37 @@ const RecipeDetailPage = () => {
     };
     fetchRecipe();
   }, [id]);
+
+  // Fetch liked state on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    axios.get('/api/recipes/my-likes', {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      const ids = res.data || [];
+      setLiked(ids.includes(id));
+    }).catch(() => {});
+  }, [id]);
+
+  const handleLike = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.dispatchEvent(new Event('open-login'));
+      return;
+    }
+    try {
+      const res = await axios.post(`/api/recipes/${id}/like`, null, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLiked(res.data.liked);
+      setLikesCount(res.data.likesCount);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        window.dispatchEvent(new Event('open-login'));
+      }
+    }
+  };
 
   const handleEdit = () => {
     navigate(`/edit-recipe/${id}`);
@@ -78,13 +113,16 @@ const RecipeDetailPage = () => {
         <div className="detail-header-section">
           <h1 className="detail-title">{recipe.title}</h1>
           <div className="detail-rating-wrapper">
-            <Rating
-              recipeId={recipe._id}
-              initialRatings={recipe.ratings}
-              initialAverage={recipe.averageRating}
-              onRateChange={handleRatingChange}
-            />
+              <Rating
+                recipeId={recipe._id}
+                userId={loggedInUserId}
+                initialRatings={recipe.ratings}
+                initialAverage={recipe.averageRating}
+                onRateChange={handleRatingChange}
+              />
           </div>
+          {/* Who liked this — right below the rating */}
+          <LikedBy recipeId={recipe._id} likesCount={likesCount} currentUserLiked={liked} />
         </div>
 
         {recipe.image && (

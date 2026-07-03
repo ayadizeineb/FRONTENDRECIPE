@@ -19,6 +19,12 @@ function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    const handleOpenLogin = () => setIsLoginOpen(true);
+    window.addEventListener('open-login', handleOpenLogin);
+    return () => window.removeEventListener('open-login', handleOpenLogin);
+  }, []);
+
   const handleShareClick = () => {
     if (isAuthenticated) {
       navigate("/add-recipe");

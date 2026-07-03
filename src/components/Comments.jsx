@@ -23,7 +23,14 @@ const Comments = ({ recipeId, userId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeId]);
 
+  const isLoggedIn = !!localStorage.getItem('token');
+
   const handleAdd = async () => {
+    // Gate: open login modal if not authenticated
+    if (!isLoggedIn) {
+      window.dispatchEvent(new Event('open-login'));
+      return;
+    }
     if (!newText.trim()) return;
     setLoading(true);
     setError(null);
@@ -38,8 +45,13 @@ const Comments = ({ recipeId, userId }) => {
       setComments(prev => [...prev, res.data.comment]);
       setNewText('');
     } catch (err) {
-      console.error('Error adding comment:', err);
-      setError(err.response?.data?.message || 'Could not add comment');
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('open-login'));
+      } else {
+        console.error('Error adding comment:', err);
+        setError(err.response?.data?.message || 'Could not add comment');
+      }
     } finally {
       setLoading(false);
     }
@@ -106,21 +118,28 @@ const Comments = ({ recipeId, userId }) => {
         )}
       </div>
 
-      <div className="add-comment-form-wrapper">
+      <div 
+        className={`add-comment-form-wrapper ${!isLoggedIn ? 'logged-out' : ''}`}
+        onClick={!isLoggedIn ? () => window.dispatchEvent(new Event('open-login')) : undefined}
+        style={!isLoggedIn ? { cursor: 'pointer' } : {}}
+      >
         <h4 className="add-comment-heading">Add a Comment</h4>
         <textarea
           className="add-comment-textarea"
           rows="3"
           value={newText}
-          onChange={e => setNewText(e.target.value)}
-          placeholder="Write your comment here..."
+          onChange={isLoggedIn ? e => setNewText(e.target.value) : undefined}
+          placeholder={isLoggedIn ? "Write your comment here..." : "Log in to share your thoughts..."}
           disabled={loading}
+          readOnly={!isLoggedIn}
+          style={!isLoggedIn ? { cursor: 'pointer' } : {}}
         />
         <div className="add-comment-actions">
           <button 
-            onClick={handleAdd} 
-            disabled={loading || !newText.trim()} 
+            onClick={isLoggedIn ? handleAdd : undefined} 
+            disabled={loading || (isLoggedIn && !newText.trim())} 
             className="comment-submit-btn"
+            style={!isLoggedIn ? { cursor: 'pointer' } : {}}
           >
             {loading ? 'Posting...' : 'Post Comment'}
           </button>

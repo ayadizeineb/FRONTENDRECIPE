@@ -69,7 +69,7 @@ const RecipeCard = ({ recipe }) => {
 
           <div className="d-flex align-items-center text-danger" style={{ fontSize: '0.85rem' }}>
             <i className="fa-solid fa-heart mr-1"></i>
-            <span className="font-weight-bold text-white">{likes?.length || 0}</span>
+            <span className="font-weight-bold text-white">{likes || 0}</span>
           </div>
 
           <Link to={`/recipes/${_id}`} className="btn btn-premium-primary py-1 px-3" style={{ fontSize: '0.8rem' }}>

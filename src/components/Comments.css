@@ -192,3 +192,19 @@
   border-radius: 8px;
   background-color: #fffaf7;
 }
+
+/* ── Logged out Comments Form ── */
+.add-comment-form-wrapper.logged-out {
+  position: relative;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.add-comment-form-wrapper.logged-out:hover {
+  opacity: 1;
+  border-color: rgba(224, 123, 84, 0.4);
+}
+
+.add-comment-form-wrapper.logged-out textarea {
+  background-color: rgba(255, 255, 255, 0.4);
+}

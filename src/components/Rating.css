@@ -59,3 +59,43 @@
   font-style: italic;
   color: #a4b0be;
 }
+
+.rating-login-prompt {
+  font-size: 0.76rem;
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.18s;
+  font-style: italic;
+}
+
+.rating-login-prompt:hover {
+  color: #888;
+}
+
+.user-rating-value {
+  color: #27ae60;
+  font-weight: 600;
+  font-size: 0.78rem;
+  background-color: #e8f8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.01em;
+}
+
+.star-symbol.user-rated.filled {
+  color: #ff9f43; /* Warm distinct amber for user's own rating */
+}
+
+.rating-error-msg {
+  font-size: 0.75rem;
+  color: #e74c3c;
+  font-style: italic;
+  margin-left: 4px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

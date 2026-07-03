@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './AllRecipes.css';
@@ -21,8 +21,6 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
     const fetchRecipes = async () => {
       try {
         const basePath = userOnly ? '/api/recipes/my-recipes' : '/api/recipes';
-        const apiBase = import.meta.env.VITE_API_URL || 'https://backendrecipe-1.onrender.com';
-        const urlObj = new URL(basePath, apiBase);
 
         const params = new URLSearchParams({
           skip: ((page - 1) * limit).toString(),
@@ -34,23 +32,31 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
           ...(tags && { tags }),
         });
 
-        urlObj.search = params.toString();
-
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || '';
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const res = await axios.get(urlObj.toString(), { headers });
+        const res = await axios.get(`${basePath}?${params.toString()}`, { headers });
         const { data, totalPages: tp } = res.data;
 
         setRecipes(data);
         setTotalPages(tp);
 
-        // Init like counts from server — liked always false (IP not resolvable client-side)
+        // Fetch which recipes the current user has liked to pre-fill hearts
+        let likedIds = [];
+        if (token) {
+          try {
+            const likeRes = await axios.get('/api/recipes/my-likes', { headers });
+            likedIds = likeRes.data || [];
+          } catch (_) {
+            // Not logged in or endpoint error — keep likedIds empty
+          }
+        }
+
         const initialLikeState = {};
         data.forEach((recipe) => {
           initialLikeState[recipe._id] = {
-            liked: false,
-            count: recipe.likesCount ?? recipe.likes?.length ?? 0,
+            liked: likedIds.includes(recipe._id),
+            count: recipe.likes ?? 0,
           };
         });
         setLikeState(initialLikeState);
@@ -63,18 +69,19 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
     fetchRecipes();
   }, [page, startsWith, searchTerm, userOnly, category, difficulty, tags, limit]);
 
-  // ---------------------------------------------------------------------------
-  // Like — NO optimistic update: server is single source of truth.
-  // Optimistic update caused double-count because:
-  //   1. Local state added +1 immediately
-  //   2. Server sync also set count to +1
-  // Since IP isn't readable client-side, we can't predict the toggle → just wait.
-  // ---------------------------------------------------------------------------
   const handleLike = async (e, recipeId) => {
     e.stopPropagation();
+
+    // Gate: trigger login modal if not authenticated
+    const token = localStorage.getItem('token') || '';
+    if (!token) {
+      window.dispatchEvent(new Event('open-login'));
+      return;
+    }
+
     try {
-      const res = await axios.post(`/api/recipes/${recipeId}/like`);
-      // Trust only what the server returns
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`/api/recipes/${recipeId}/like`, null, { headers });
       setLikeState(prev => ({
         ...prev,
         [recipeId]: {
@@ -83,7 +90,12 @@ const AllRecipes = ({ userOnly = false, filters = {} }) => {
         },
       }));
     } catch (err) {
-      console.error('Failed to toggle like:', err);
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('open-login'));
+      } else {
+        console.error('Failed to toggle like:', err);
+      }
     }
   };
 

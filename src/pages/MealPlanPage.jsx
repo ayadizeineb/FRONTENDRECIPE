@@ -48,7 +48,13 @@ function MealPlanPage() {
       setError(null);
     } catch (err) {
       console.error('Failed to load meal plan:', err);
-      setError('Could not load meal plan. Please try again.');
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        setError('Please log in to view your meal plan.');
+        window.dispatchEvent(new Event('open-login'));
+      } else {
+        setError('Could not load meal plan. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

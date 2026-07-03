@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import LikedBy from '../components/LikedBy';
 
 const RecipeDetail = () => {
   const { id } = useParams();
@@ -43,15 +44,21 @@ const RecipeDetail = () => {
     try {
       const res = await axios.get(`/api/recipes/${id}`);
       setRecipe(res.data);
-      setLikesCount(res.data.likes?.length || 0);
+      // likes is now a number, not an array
+      setLikesCount(res.data.likes || 0);
       setComments(res.data.comments || []);
-      
-      // Determine if current visitor/user has liked this recipe
-      let visitorId = user?.id || ''; 
-      if (res.data.likes?.includes(visitorId)) {
-        setLiked(true);
+
+      // Determine if the logged-in user has liked this recipe via the /my-likes endpoint
+      if (user) {
+        try {
+          const likeRes = await axios.get('/api/recipes/my-likes');
+          const likedIds = likeRes.data || [];
+          setLiked(likedIds.includes(id));
+        } catch (_) {
+          // Silently ignore — user just won't see their like pre-filled
+        }
       }
-      
+
       // Determine if user has rated this recipe
       if (user) {
         const ratingObj = res.data.ratings?.find(r => r.user === user.id);
@@ -73,12 +80,21 @@ const RecipeDetail = () => {
 
   // Toggle Like
   const handleLike = async () => {
+    // Gate: redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await axios.post(`/api/recipes/${id}/like`);
       setLiked(res.data.liked);
       setLikesCount(res.data.likesCount);
     } catch (err) {
-      console.error('Like error:', err);
+      if (err.response?.status === 401) {
+        navigate('/login');
+      } else {
+        console.error('Like error:', err);
+      }
     }
   };
 
@@ -253,6 +269,9 @@ const RecipeDetail = () => {
                 <h4 className="mb-0 text-white">{likesCount}</h4>
               </div>
             </div>
+
+            {/* Who liked this */}
+            <LikedBy recipeId={recipe._id} likesCount={likesCount} currentUserLiked={liked} />
 
             {/* Description */}
             <h5 className="font-weight-bold mb-2">Description</h5>

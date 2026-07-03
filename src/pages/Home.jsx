@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Home.css";
-import AllRecipes from "../components/AllRecipes";
+import AllRecipes from "../components/AllRecipes";  
 import FilterBar from "../components/FilterBar";
 
 function Home({ onShareClick }) {

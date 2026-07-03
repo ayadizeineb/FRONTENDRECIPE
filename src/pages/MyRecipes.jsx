@@ -109,7 +109,7 @@ const MyRecipes = () => {
                     </span>
                   </td>
                   <td className="align-middle text-center text-danger">
-                    <i className="fa-solid fa-heart mr-1"></i> {recipe.likes?.length || 0}
+                    <i className="fa-solid fa-heart mr-1"></i> {recipe.likes || 0}
                   </td>
                   <td className="align-middle text-center text-warning">
                     <i className="fa-solid fa-star mr-1"></i> {recipe.averageRating ? recipe.averageRating.toFixed(1) : '0.0'}
